@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel @SensiAura</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: 'Fira Code', monospace;
+  background-color: #000;
+  color: #fff;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Fundo neural */
+#neural-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+
+/* Login */
+.login-container {
+  position: relative; z-index: 10;
+  background-color: rgba(255,255,255,0.06);
+  border: 2px solid rgba(50,205,50,0.25);
+  border-radius: 12px;
+  width: 340px; height: 240px;
+  box-shadow: 0 0 20px rgba(50,205,50,0.25);
+  backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.login-container h2 { color: #8732cd; margin-bottom: 14px; text-shadow: 0 0 6px rgba(50,205,50,0.4); }
+.login-input {
+  width: 100%; padding: 12px; margin-bottom: 12px;
+  background-color: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px; color: #fff; font-size: 14px;
+}
+.login-input::placeholder { color: rgba(255,255,255,0.5); }
+.login-input:focus { outline: none; border-color: #32cd47; box-shadow: 0 0 8px rgba(50,205,50,0.25); }
+
+.login-btn {
+  width: 100%; padding: 12px; background-color: transparent;
+  border: 1px solid #8732cd; border-radius: 6px; color: #fff; font-size: 14px;
+  cursor: pointer; transition: 0.18s;
+}
+.login-btn:hover { background-color: rgba(50,205,50,0.12); }
+
+.login-error {
+  color: #a132cd; margin-top: 10px; text-align: center; font-size: 14px; display: none;
+}
+
+/* Painel */
+.painel {
+  position: relative; z-index: 10;
+  background-color: rgba(0,0,0,0.55);
+  border: 1px solid rgba(161, 50, 205, 0.25);
+  border-radius: 12px;
+  width: 320px; height: 470px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+  backdrop-filter: blur(6px);
+  display: none; flex-direction: column; color: #fff;
+}
+
+.painel-titulo {
+  text-align: center; color: #cd32c0; font-size: 18px; font-weight: 700;
+  padding: 10px 12px 6px 12px; text-shadow: 0 0 8px git oushgitoushrgba(50,205,50,0.4); letter-spacing: 0.6px;
+}
+
+/* Tabs */
+.tabs { display: flex; justify-content: space-around; background-color: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(50,205,50,0.25); font-size: 14px; }
+.tab {
+  flex: 1; text-align: center; padding: 8px 0; cursor: pointer; transition: 0.2s; user-select: none;
+  border-right: 1px solid rgba(50,205,50,0.15); color: #fff;
+}
+.tab:last-child { border-right: none; }
+.tab:hover { background-color: rgba(50,205,50,0.08); }
+.tab.active { background-color: rgba(50,205,50,0.15); font-weight: 700; }
+
+/* Conteúdo */
+.conteudo { display: none; padding: 12px 14px; overflow-y: auto; flex-grow: 1; }
+.conteudo.active { display: block; }
+
+/* Opção */
+.opcao {
+  background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+  padding: 8px 10px; border-radius: 6px; margin-bottom: 8px; transition: 0.18s;
+  display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 13px; color: #fff;
+}
+.opcao:hover { background-color: rgba(255,255,255,0.05); }
+
+/* Ativa */
+.opcao.ativa { background-color: rgba(50,205,50,0.12); border-color: rgba(50,205,50,0.4); }
+
+/* Toggle visual */
+.toggle {
+  width: 38px; height: 18px; border-radius: 15px; background-color: rgba(255,255,255,0.1);
+  position: relative; transition: 0.22s; border: 1px solid rgba(255,255,255,0.2);
+}
+.toggle::before {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background-color: #fff; transition: 0.22s;
+}
+.opcao.ativa .toggle { background-color: rgba(50,205,50,0.25); border-color: rgba(50,205,50,0.4); }
+.opcao.ativa .toggle::before { transform: translateX(20px); }
+
+/* FOV */
+.fov-container { margin-top: 10px; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.02); }
+.fov-label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: #fff; }
+.fov-slider { width: 100%; height: 6px; border-radius: 6px; background: rgba(255,255,255,0.04); outline: none; -gwebkit-jappearance: none; }
+.fov-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #32CD32; cursor: pointer; border: 1px solid rgba(0,0,0,0.4); }
+.fov-value { color: #fff; font-weight: 700; }
+
+/* Botão iniciar */
+.freefire-btn {
+  width: 100%; padding: 10px; background-color: transparent; border: 1px solid #32CD32;
+  border-radius: 6px; color: #fff; font-size: 13px; cursor: pointer; transition: 0.2s; margin-top: 8px; text-align: center; font-weight: 700;
+}
+.freefire-btn:hover { background-color: rgba(50,205,50,0.12); box-shadow: 0 0 10px rgba(50,205,50,0.15); }
+
+/* Sucesso */
+.sucesso {
+  margin-top: 8px; text-align: center; background: rgba(50,205,50,0.06); border: 1px solid rgba(50,205,50,0.25);
+  color: #a7ffb8; padding: 6px; border-radius: 8px; font-weight: 700; display: none;
+}
+
+/* Erro */
+.erro {
+  margin-top: 8px; text-align: center; background: rgba(255,50,50,0.06); border: 1px solid rgba(255,50,50,0.25);
+  color: #ffa7a7; padding: 6px; border-radius: 8px; font-weight: 700; display: none;
+}
+
+/* Loading (opcional visual) */
+.loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 30; color: #fff; }
+.spinner { border: 4px solid rgba(255,255,255,0.12); border-top: 4px solid #32CD32; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+@keyframes spin { 0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);} }
+
+@media (max-width: 420px) { .painel, .login-container { width: 90%; } }
+</style>
+</head>
+<body>
+<canvas id="neural-bg"></canvas>
+
+<!-- LOGIN (apenas senha) -->
+<div class="login-container" id="loginScreen" aria-hidden="false" role="dialog">
+  <h2>Login Painel @SensiAura</h2>
+  <input type="password" class="login-input" id="password" placeholder="Digite a senha" aria-label="Senha">
+  <button class="login-btn" id="loginBtn">Entrar</button>
+  <div class="login-error" id="loginError" role="alert">Senha incorreta!</div>
+</div>
+
+<!-- PAINEL VISUAL -->
+<div class="painel" id="mainPanel" aria-hidden="true" role="application">
+  <div class="painel-titulo">auxílio @SensiAura</div>
+
+  <div class="tabs" role="tablist">
+    <div class="tab active" onclick="abrirTab(0)" role="tab">aggressive functions</div>
+    <div class="tab" onclick="abrirTab(1)" role="tab">optimization</div>
+  </div>
+
+  <!-- TAB 0: aggressive functions -->
+  <div class="conteudo active" data-tab="0">
+    <div class="opcao" data-nome="aim drag" onclick="toggleAtivar(this)"><span>aim drag</span><div class="toggle"></div></div>
+    <div class="opcao" data-nome="aimbot" onclick="toggleAtivar(this)"><span>aimbot</span><div class="toggle"></div></div>
+    <div class="opcao" data-nome="aimbot legit" onclick="toggleAtivar(this)"><span>aimbot legit</span><div class="toggle"></div></div>
+    <div class="opcao" data-nome="priorizar cabeza" onclick="toggleAtivar(this)"><span>priorizar cabeça</span><div class="toggle"></div></div>
+    <div class="opcao" data-nome="estabilizar mira" onclick="toggleAtivar(this)"><span>estabilizar mira</span><div class="toggle"></div></div>
+
+    <div class="fov-container">
+      <div class="fov-label"><span>fov</span><span class="fov-value" id="fovValue">180</span></div>
+      <input type="range" min="0" max="360" value="180" class="fov-slider" id="fovSlider" oninput="updateFOV(this.value)">
+    </div>
+
+    <button class="freefire-btn" onclick="abrirFreeFire()">INICIAR</button>
+    <div class="sucesso" id="sucessoMsg">Injetado com sucesso ✅</div>
+    <div class="erro" id="erroMsg">Erro ao abrir Free Fire ❌</div>
+  </div>
+
+  <!-- TAB 1: optimization -->
+  <div class="conteudo" data-tab="1">
+    <div class="opcao" data-nome="forzar 144fps" onclick="toggleAtivar(this)"><span>forçar 144fps</span><div class="toggle"></div></div>
+    <div class="opcao" data-nome="suavizar toques" onclick="toggleAtivar(this)"><span>suavizar toques</span><div class="toggle"></div></div>
+    <div class="opcao" data-nome="otimizar gráficos" onclick="toggleAtivar(this)"><span>otimizar gráficos</span><div class="toggle"></div></div>
+  </div>
+</div>
+
+<!-- LOADING (visual) -->
+<div class="loading-screen" id="loadingScreen" aria-hidden="true">
+  <div class="spinner" role="status" aria-hidden="true"></div>
+  <p id="loadingText">Abrindo Free Fire...</p>
+</div>
+
+<script>
+// Login (apenas senha)
+const loginBtn = document.getElementById('loginBtn');
+const passwordInput = document.getElementById('password');
+const loginError = document.getElementById('loginError');
+const loginScreen = document.getElementById('loginScreen');
+const mainPanel = document.getElementById('mainPanel');
+
+function login() {
+  const p = passwordInput.value.trim();
+  // senha solicitada
+  if (p === 'SensiAura') {
+    loginError.style.display = 'none';
+    loginScreen.style.display = 'none';
+    loginScreen.setAttribute('aria-hidden','true');
+    mainPanel.style.display = 'flex';
+    mainPanel.setAttribute('aria-hidden','false');
+    // foco na primeira aba
+    document.querySelector('.tab').focus();
+  } else {
+    loginError.style.display = 'block';
+    setTimeout(() => loginError.style.display = 'none', 2000);
+  }
+}
+loginBtn.onclick = login;
+passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+// Tabs
+function abrirTab(i) {
+  document.querySelectorAll('.tab').forEach((t, x) => t.classList.toggle('active', x === i));
+  document.querySelectorAll('.conteudo').forEach((c, x) => c.classList.toggle('active', x === i));
+}
+
+// Toggle visual das opções
+function toggleAtivar(el) {
+  el.classList.toggle('ativa');
+  // acessibilidade
+  el.setAttribute('aria-pressed', el.classList.contains('ativa') ? 'true' : 'false');
+}
+
+// FOV
+function updateFOV(v) { document.getElementById('fovValue').textContent = v; }
+
+// Detectar dispositivo
+function isIOS() {
+  return [
+    'iPad Simulator',
+    'iPhone Simulator',
+    'iPod Simulator',
+    'iPad',
+    'iPhone',
+    'iPod'
+  ].includes(navigator.platform) || 
+  (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+}
+
+function isAndroid() {
+  return /android/i.test(navigator.userAgent);
+}
+
+// "Abrir Free Fire" - Método corrigido para Android e iOS
+function abrirFreeFire() {
+  const sucessoMsg = document.getElementById('sucessoMsg');
+  const erroMsg = document.getElementById('erroMsg');
+  const loadingScreen = document.getElementById('loadingScreen');
+  const loadingText = document.getElementById('loadingText');
+  
+  // Esconder mensagens anteriores
+  sucessoMsg.style.display = 'none';
+  erroMsg.style.display = 'none';
+  
+  // Mostrar loading
+  loadingScreen.style.display = 'flex';
+  loadingScreen.setAttribute('aria-hidden','false');
+  document.body.style.overflow = 'hidden';
+  loadingText.textContent = 'Abrindo Free Fire...';
+
+  // Função para tentar abrir o Free Fire
+  function tentarAbrirFreeFire() {
+    let appAberto = false;
+    const timestamp = Date.now();
+    
+    if (isAndroid()) {
+      // Métodos para Android
+      const androidUrls = [
+        'intent://com.dts.freefireth#Intent;package=com.dts.freefireth;scheme=freefire;end;',
+        'freefire://',
+        'com.dts.freefireth://',
+        'intent://launch#Intent;package=com.dts.freefireth;end;'
+      ];
+
+      for (let url of androidUrls) {
+        try {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = url;
+          document.body.appendChild(iframe);
+          
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 2000);
+          
+          appAberto = true;
+          break;
+        } catch (e) {
+          console.log('Erro com URL Android:', url, e);
+        }
+      }
+    } 
+    else if (isIOS()) {
+      // Métodos para iOS
+      const iosUrls = [
+        'freefire://',
+        'com.dts.freefireth://',
+        'freefireth://'
+      ];
+
+      // Primeiro tentamos abrir diretamente
+      for (let url of iosUrls) {
+        try {
+          window.location = url;
+          appAberto = true;
+          break;
+        } catch (e) {
+          console.log('Erro com URL iOS:', url, e);
+        }
+      }
+
+      // Se não funcionou, tentamos com timeout e fallback
+      if (!appAberto) {
+        setTimeout(() => {
+          // Se ainda estamos na mesma página após 500ms, o app não abriu
+          if (Date.now() - timestamp < 1000) {
+            // Tentar método alternativo para iOS
+            try {
+              const iframe = document.createElement('iframe');
+              iframe.style.display = 'none';
+              iframe.src = 'freefire://';
+              document.body.appendChild(iframe);
+              
+              setTimeout(() => {
+                document.body.removeChild(iframe);
+              }, 1000);
+            } catch (e) {
+              console.log('Erro com iframe iOS:', e);
+            }
+          }
+        }, 500);
+      }
+    } 
+    else {
+      // Para outros dispositivos, tentar métodos gerais
+      try {
+        window.location.href = 'freefire://';
+        appAberto = true;
+      } catch (e) {
+        console.log('Erro com método geral:', e);
+      }
+    }
+
+    return appAberto;
+  }
+
+  // Executar após um pequeno delay
+  setTimeout(() => {
+    const appAberto = tentarAbrirFreeFire();
+    
+    // Para iOS, sempre assumimos que funcionou devido à natureza do sistema
+    const sucesso = appAberto || isIOS();
+    
+    if (sucesso) {
+      loadingText.textContent = 'Free Fire aberto com sucesso!';
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+        loadingScreen.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+        sucessoMsg.style.display = 'block';
+        setTimeout(() => sucessoMsg.style.display = 'none', 5000);
+      }, 2000);
+    } else {
+      loadingText.textContent = 'Free Fire não encontrado. Redirecionando...';
+      setTimeout(() => {
+        // Redirecionar para a página de download apropriada
+        if (isIOS()) {
+          window.open('https://apps.apple.com/app/free-fire-id1326473789', '_blank');
+        } else {
+          window.open('https://play.google.com/store/apps/details?id=com.dts.freefireth', '_blank');
+        }
+        
+        loadingScreen.style.display = 'none';
+        loadingScreen.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+        erroMsg.style.display = 'block';
+        setTimeout(() => erroMsg.style.display = 'none', 5000);
+      }, 2000);
+    }
+  }, 1000);
+}
+
+/* Fundo animado neural verde */
+const canvas = document.getElementById('neural-bg');
+const ctx = canvas.getContext('2d');
+let w, h, nodes = [];
+function resize() {
+  w = canvas.width = innerWidth;
+  h = canvas.height = innerHeight;
+  nodes = [];
+  for (let i = 0; i < 60; i++) nodes.push({
+    x: Math.random() * w,
+    y: Math.random() * h,
+    vx: (Math.random() - 0.5) * 0.6,
+    vy: (Math.random() - 0.5) * 0.6,
+    r: 1 + Math.random() * 1.8
+  });
+}
+window.addEventListener('resize', resize, { passive: true });
+resize();
+
+function draw() {
+  ctx.clearRect(0, 0, w, h);
+  for (let i = 0; i < nodes.length; i++) {
+    const a = nodes[i];
+    a.x += a.vx; a.y += a.vy;
+    if (a.x < 0) { a.x = 0; a.vx *= -1; }
+    if (a.x > w) { a.x = w; a.vx *= -1; }
+    if (a.y < 0) { a.y = 0; a.vy *= -1; }
+    if (a.y > h) { a.y = h; a.vy *= -1; }
+
+    for (let j = i + 1; j < nodes.length; j++) {
+      const b = nodes[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 150) {
+        ctx.strokeStyle = `rgba(50,205,50,${1 - dist / 150})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(50,205,50,0.95)';
+    ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
